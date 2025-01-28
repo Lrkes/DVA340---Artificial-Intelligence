@@ -31,4 +31,39 @@ items = [
     (11, 25, 37),
 ]
 
-print(items)
+
+def DFS(max_weight, items):
+    # Initialize stack
+    stack = [(0, 0, 0, [])]
+
+    # track the best solution and value
+    best_value = 0
+    best_solution = []
+
+    threshold_weight = 0.9 * max_weight
+
+    while stack:
+        # get the current item
+        item_idx, value, weight, solution = stack.pop()
+
+        if weight >= threshold_weight:
+            continue
+
+        # Base case: if we have processed all items
+        if item_idx == len(items):
+            if value > best_value:
+                best_value = value
+                best_solution = solution.copy()
+            continue
+
+        item_id, item_value, item_weight = items[item_idx]
+
+        stack.append((item_idx + 1, value, weight, solution))
+
+        if weight + item_weight <= max_weight:
+            stack.append((item_idx + 1, value + item_value, weight + item_weight, solution + [item_id]))
+
+    print(f"Best value: {best_value}, Best solution: {best_solution}")
+
+
+DFS(max_weight, items)
