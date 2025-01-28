@@ -47,7 +47,10 @@ def DFS(max_weight, items):
         item_idx, value, weight, solution = stack.pop()
 
         if weight >= threshold_weight:
-            continue
+            if value > best_value:
+                best_value = value
+                best_solution = solution.copy()
+            return
 
         # Base case: if we have processed all items
         if item_idx == len(items):
