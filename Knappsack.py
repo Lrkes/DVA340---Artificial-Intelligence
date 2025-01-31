@@ -1,3 +1,5 @@
+from collections import deque
+
 """
 0-1 Knapsack Problem
 
@@ -32,41 +34,85 @@ items = [
 ]
 
 
-def DFS(max_weight, items):
-    # Initialize stack
-    stack = [(0, 0, 0, [])]
+def DFS(items, target_ratio=None):
+    stack = [(0, 0, 0, [])]  # (item_idx, value, weight, solution)
+    threshold_weight = target_ratio * max_weight if target_ratio is not None else max_weight
 
-    # track the best solution and value
-    best_value = 0
-    best_solution = []
-
-    threshold_weight = 0.9 * max_weight
+    best_solution, best_value = [], 0  # Track the best solution for optimal value
 
     while stack:
-        # get the current item
         item_idx, value, weight, solution = stack.pop()
 
-        if weight >= threshold_weight:
-            if value > best_value:
-                best_value = value
-                best_solution = solution.copy()
-            return
+        # If target_ratio is set, return the first valid solution ("good enough")
+        if target_ratio is not None and weight >= threshold_weight:
+            print(f"First good enough value: {value}, Solution: {solution}")
+            return solution, value
 
-        # Base case: if we have processed all items
+        if target_ratio is None and weight <= max_weight and value > best_value:
+            best_value, best_solution = value, solution
+
+        # Base case: all items processed
         if item_idx == len(items):
-            if value > best_value:
-                best_value = value
-                best_solution = solution.copy()
             continue
 
         item_id, item_value, item_weight = items[item_idx]
 
-        stack.append((item_idx + 1, value, weight, solution))
-
+        # Add item if it fits
         if weight + item_weight <= max_weight:
             stack.append((item_idx + 1, value + item_value, weight + item_weight, solution + [item_id]))
 
-    print(f"Best value: {best_value}, Best solution: {best_solution}")
+        # Skip item
+        stack.append((item_idx + 1, value, weight, solution))
+
+    # Return best solution if no threshold solution was found
+    print(f"Optimal value: {best_value}, Solution: {best_solution}")
+    return best_solution, best_value
 
 
-DFS(max_weight, items)
+def BFS(items, target_ratio=None):
+    queue = deque([(0, 0, 0, [])])  # (item_idx, value, weight, solution (tracks path))
+    threshold_weight = target_ratio * max_weight if target_ratio is not None else max_weight
+    best_solution, best_value = [], 0
+
+    while queue:
+        item_idx, value, weight, solution = queue.popleft()
+
+        # Stop early if target ratio is met (good enough solution)
+        if weight >= threshold_weight:
+            print(f"First good enough value found: {value}, Solution: {solution}")
+            return solution, value
+
+        # Track the best if no target ratio is set
+        if target_ratio is None and value > best_value and weight <= max_weight:
+            best_solution, best_value = solution, value
+
+        # Base case: all items processed
+        if item_idx == len(items):
+            continue
+
+        item_id, item_value, item_weight = items[item_idx]
+
+        # Explore including the current item (if it fits)
+        if weight + item_weight <= max_weight:
+            queue.append((item_idx + 1, value + item_value, weight + item_weight, solution + [item_id]))
+
+        # Explore excluding the current item
+        queue.append((item_idx + 1, value, weight, solution))
+
+    print(f"Optimal value found: {best_value}, Solution: {best_solution}")
+    return best_solution, best_value
+
+
+# Running DFS for both cases
+print("DFS with target ratio (fastest first okay solution):")
+DFS(items, target_ratio=0.9)
+
+print("\nDFS with no target ratio (search for best solution):")
+DFS(items)
+# ---------------------------------------------------------------
+# Running BFS for both cases
+print("BFS with target ratio (fastest first okay solution):")
+BFS(items, target_ratio=0.9)
+
+print("\nBFS with no target ratio (search for best solution):")
+BFS(items)
