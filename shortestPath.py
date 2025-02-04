@@ -3,10 +3,10 @@ import heapq
 # Graph representation: Each city points to a list of tuples (neighbor, distance)
 graph = {
     "Almeria": [("Granada", 167), ("Murcia", 218)],
-    "Granada": [("Jaen", 92), ("Malaga", 123), ("Almeria", 167)],
+    "Granada": [("Almeria", 167), ("Jaen", 92), ("Malaga", 123)],
     "Murcia": [("Albacete", 146), ("Alicante", 81), ("Almeria", 218)],
     "Alicante": [("Albacete", 167), ("Murcia", 81)],
-    "Albacete": [("Murcia", 146), ("Alicante", 167), ("Cuenca", 144)],
+    "Albacete": [("Murcia", 146), ("Alicante", 167), ("Cuenca", 144), ("Madrid", 257)],
     "Jaen": [("Granada", 92), ("Cordoba", 120), ("Madrid", 331)],
     "Cordoba": [("Sevilla", 140), ("Jaen", 120), ("CiudadReal", 195)],
     "Malaga": [("Sevilla", 206), ("Cadiz", 235), ("Granada", 123)],
@@ -28,6 +28,7 @@ graph = {
     "Huesca": [("Zaragoza", 74), ("Lleida", 112), ("Pamplona", 165)],
     "Pamplona": [("Huesca", 165), ("Zaragoza", 178)],
     "Soria": [("Zaragoza", 159), ("Guadalajara", 171), ("Logrono", 101), ("Burgos", 142)],
+    "Guadalajara": [("Zaragoza", 256), ("Soria", 171), ("Madrid", 60)],  # ✅ Now included
     "Logrono": [("Soria", 101), ("Vitoria", 94)],
     "Vitoria": [("Logrono", 94), ("Burgos", 118), ("SanSebastian", 100), ("Bilbao", 62)],
     "SanSebastian": [("Vitoria", 100), ("Bilbao", 101)],
@@ -54,22 +55,23 @@ graph = {
     "Toledo": [("CiudadReal", 118), ("Madrid", 72)]
 }
 
-# Straight-line distances to Valladolid
+# Heuristic: Straight-line distances to Valladolid
 straight_line_distances = {
-    "Almeria": 571, "Granada": 507, "Jaen": 439, "Cordoba": 419, "Malaga": 550,
-    "Huelva": 525, "Sevilla": 487, "Cadiz": 586, "Murcia": 510, "Albacete": 383,
-    "Alicante": 515, "Valencia": 441, "Castellon": 435, "Tarragona": 502, "Barcelona": 576,
-    "Lleida": 445, "Gerona": 627, "Merida": 334, "Badajoz": 363, "Caceres": 280,
-    "CiudadReal": 305, "Toledo": 208, "Cuenca": 280, "Guadalajara": 173, "Zaragoza": 319,
-    "Teruel": 337, "Huesca": 362, "Logrono": 209, "Vitoria": 215, "Bilbao": 232,
-    "SanSebastian": 292, "Santander": 215, "Oviedo": 212, "Coruna": 357, "Santiago": 343,
-    "Pontevedra": 335, "Orense": 271, "Lugo": 278, "Madrid": 162, "Leon": 126,
-    "Zamora": 87, "Salamanca": 109, "Segovia": 94, "Valladolid": 0, "Burgos": 114,
-    "Palencia": 43, "Soria": 187, "Pamplona": 284, "Avila": 110
+    "Almeria": 571, "Granada": 507, "Jaen": 439, "Cordoba": 419, "Malaga": 550, "Huelva": 525, "Sevilla": 487,
+    "Cadiz": 586, "Murcia": 510, "Albacete": 383, "Alicante": 515, "Valencia": 441, "Castellon": 435, "Tarragona": 502,
+    "Barcelona": 576, "Lleida": 445, "Gerona": 627, "Merida": 334, "Badajoz": 363, "Caceres": 280, "CiudadReal": 305,
+    "Toledo": 208, "Cuenca": 280, "Guadalajara": 173, "Zaragoza": 319, "Teruel": 337, "Huesca": 362, "Logrono": 209,
+    "Vitoria": 215, "Bilbao": 232, "SanSebastian": 292, "Santander": 215, "Oviedo": 212, "Coruna": 357, "Santiago": 343,
+    "Pontevedra": 335, "Orense": 271, "Lugo": 278, "Madrid": 162, "Leon": 126, "Zamora": 87, "Salamanca": 109,
+    "Segovia": 94, "Valladolid": 0, "Burgos": 114, "Palencia": 43, "Soria": 187, "Pamplona": 284, "Avila": 110
 }
 
 
 def greedyFirstSearch(node):
+    """
+        Greedy Best-First Search algorithm.
+        It selects the next city based only on the heuristic (straight-line distance to the goal).
+    """
     min_heap = []
     visited = set()
     came_from = {}
@@ -79,62 +81,94 @@ def greedyFirstSearch(node):
 
     # Process heap
     while min_heap:
-        print("Heap:", min_heap)
-
-        # Get the city with the shortest straight-line distance
+        # Get city with the shortest estimated distance (h(n))
         _, city = heapq.heappop(min_heap)
 
+        # skip if the city, if it was already visited
         if city in visited:
             continue
 
         if city == "Valladolid":
             print(f"Goal reached: {city}")
-            return
+            return reconstruct_path(came_from, city)
 
         # Add it to the list of visited cities
         visited.add(city)
-        print(f"Visiting: {city}")
 
-        for neighbor, _ in graph[city]:
-            if neighbor not in visited:
-                heapq.heappush(min_heap, (straight_line_distances[neighbor], neighbor))
-                came_from[neighbor] = city
-    print("Visited:", visited)
+        for neighbor, _ in graph[city]:  # Explore neighbors
+            if neighbor not in visited:  # again skip if the city was already visited
+                heapq.heappush(min_heap, (straight_line_distances[neighbor], neighbor))  # Push neighbors + heuristic
+                if neighbor not in came_from:
+                    came_from[neighbor] = city  # not revisited in GFS
 
 
-def aStar(node):
+def aStar(node, goal="Valladolid"):
+    """
+        A* search algorithm.
+        Uses both the actual cost (g) and the heuristic (h) to find the optimal path.
+        """
     min_heap = []
-    visited = set()
-    came_from = {}  # Stores previous node (of the best path) for each node
-    g_score = {city: float("inf") for city in graph}  # store the lowest known cost to reach each node.
-    # TODO: But how do we know path with that cost?
+    came_from = {}  # Stores previous node (best path)
+    g_score = {city: float("inf") for city in graph}  # Store actual cost to reach city (g(n))
+    g_score[node] = 0  # Start node has g(n) = 0
 
     # Push first node (start)
     heapq.heappush(min_heap, (straight_line_distances[node], node, 0))  # (f, city, g)
 
-    # Process heap
     while min_heap:
-        print("Heap:", min_heap)
+        # Get the city with the shortest estimated cost f(n) (min heap)
+        _, city, g = heapq.heappop(min_heap)
 
-        # Get the city with the shortest straight-line distance
-        _, city = heapq.heappop(min_heap)
-
-        if city in visited:
-            continue
-
-        if city == "Valladolid":
+        if city == goal:
             print(f"Goal reached: {city}")
-            return
+            return reconstruct_path(came_from, city)
 
-        # Add it to the list of visited cities
-        visited.add(city)
-        print(f"Visiting: {city}")
+        for neighbor, cost in graph[city]:  # Explore neighbors
+            tentative_g = g + cost  # Compute new path (potential)
 
-        for neighbor, _ in graph[city]:
-            if neighbor not in visited:
-                heapq.heappush(min_heap, (straight_line_distances[neighbor], neighbor, x))
-                came_from[neighbor] = city
-    print("Visited:", visited)
+            # If the new path is better, update it
+            if tentative_g < g_score[neighbor]:
+                g_score[neighbor] = tentative_g
+                f = tentative_g + straight_line_distances[neighbor]  # f(n) = g + h
+                heapq.heappush(min_heap, (f, neighbor, tentative_g))  # Push updated node
+                came_from[neighbor] = city  # Track optimal path
+
+    print("No path found")
+    return None
 
 
-greedyFirstSearch("Malaga")
+"""
+Reconstructs the path from the start node to the goal node
+"""
+
+
+def reconstruct_path(came_from, current):
+    path = []
+    while current in came_from:
+        path.append(current)
+        current = came_from[current]
+    path.append(current)
+    path.reverse()
+    return path
+
+
+print(greedyFirstSearch("Malaga"))
+print("=====================================")
+print(aStar("Malaga"))
+
+
+"""
+Greedy Best-First Search:
+- Uses only the heuristic function h(n).
+- Always expands the node that appears closest to the goal based on h(n).
+- Ignores the actual cost so far (g(n)), which can lead to suboptimal solutions.
+
+A* Search:
+- Uses f(n) = g(n) + h(n).
+- Balances between the shortest known path so far (g(n)) and the estimated cost to the goal (h(n)).
+- Guarantees optimality if h(n) is admissible (never overestimates the actual cost).
+
+Key Differences:
+- Greedy is faster but not necessarily optimal (can get stuck in local minima).
+- A* is optimal and complete as long as h(n) is admissible.
+"""

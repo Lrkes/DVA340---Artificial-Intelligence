@@ -15,8 +15,7 @@ Constraints:
 - Total weight of selected items ≤ max weight.
 """
 
-# TODO: Not parsing okay?
-
+# Problem data
 max_weight = 420
 items = [
     # (ID, Benefit, Weight)
@@ -34,8 +33,9 @@ items = [
 ]
 
 
-def DFS(items, target_ratio=None):
+def DFS(target_ratio=None):
     stack = [(0, 0, 0, [])]  # (item_idx, value, weight, solution)
+    # If target_ratio is set, return the first valid solution ("good enough")
     threshold_weight = target_ratio * max_weight if target_ratio is not None else max_weight
 
     best_solution, best_value = [], 0  # Track the best solution for optimal value
@@ -69,7 +69,7 @@ def DFS(items, target_ratio=None):
     return best_solution, best_value
 
 
-def BFS(items, target_ratio=None):
+def BFS(target_ratio=None):
     queue = deque([(0, 0, 0, [])])  # (item_idx, value, weight, solution (tracks path))
     threshold_weight = target_ratio * max_weight if target_ratio is not None else max_weight
     best_solution, best_value = [], 0
@@ -105,14 +105,17 @@ def BFS(items, target_ratio=None):
 
 # Running DFS for both cases
 print("DFS with target ratio (fastest first okay solution):")
-DFS(items, target_ratio=0.9)
+DFS(target_ratio=0.9)
 
 print("\nDFS with no target ratio (search for best solution):")
-DFS(items)
-# ---------------------------------------------------------------
+DFS()
+print("---------------------------------------------------------------")
 # Running BFS for both cases
 print("BFS with target ratio (fastest first okay solution):")
-BFS(items, target_ratio=0.9)
+BFS(target_ratio=0.9)
 
 print("\nBFS with no target ratio (search for best solution):")
-BFS(items)
+BFS()
+
+# DFS is uses less memory than BFS
+# BFS is usually faster(?)
