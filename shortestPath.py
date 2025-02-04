@@ -23,7 +23,8 @@ graph = {
     "Barcelona": [("Lleida", 163), ("Tarragona", 99), ("Gerona", 103)],
     "Lleida": [("Barcelona", 163), ("Gerona", 229), ("Huesca", 112), ("Zaragoza", 152)],
     "Gerona": [("Barcelona", 103), ("Lleida", 229)],
-    "Zaragoza": [("Huesca", 74), ("Pamplona", 178), ("Soria", 159), ("Guadalajara", 256), ("Lleida", 152), ("Teruel", 171)],
+    "Zaragoza": [("Huesca", 74), ("Pamplona", 178), ("Soria", 159), ("Guadalajara", 256), ("Lleida", 152),
+                 ("Teruel", 171)],
     "Huesca": [("Zaragoza", 74), ("Lleida", 112), ("Pamplona", 165)],
     "Pamplona": [("Huesca", 165), ("Zaragoza", 178)],
     "Soria": [("Zaragoza", 159), ("Guadalajara", 171), ("Logrono", 101), ("Burgos", 142)],
@@ -46,7 +47,8 @@ graph = {
     "Valladolid": [("Segovia", 115), ("Leon", 136), ("Zamora", 100), ("Palencia", 51)],
     "Palencia": [("Valladolid", 51), ("Burgos", 92)],
     "Burgos": [("Palencia", 92), ("Soria", 142), ("Logrono", 118), ("Santander", 181)],
-    "Madrid": [("Jaen", 331), ("Albacete", 257), ("Cuenca", 168), ("Guadalajara", 60), ("Burgos", 245), ("Segovia", 92), ("Avila", 109), ("Caceres", 301), ("Toledo", 72)],
+    "Madrid": [("Jaen", 331), ("Albacete", 257), ("Cuenca", 168), ("Guadalajara", 60), ("Burgos", 245), ("Segovia", 92),
+               ("Avila", 109), ("Caceres", 301), ("Toledo", 72)],
     "CiudadReal": [("Cordoba", 195), ("Toledo", 118)],
     "Cuenca": [("Valencia", 199), ("Albacete", 144), ("Madrid", 168), ("Teruel", 148)],
     "Toledo": [("CiudadReal", 118), ("Madrid", 72)]
@@ -66,6 +68,7 @@ straight_line_distances = {
     "Palencia": 43, "Soria": 187, "Pamplona": 284, "Avila": 110
 }
 
+
 def greedyFirstSearch(node):
     min_heap = []
     visited = set()
@@ -76,7 +79,7 @@ def greedyFirstSearch(node):
 
     # Process heap
     while min_heap:
-        print("Heap:", min_heap)  # For debugging purposes
+        print("Heap:", min_heap)
 
         # Get the city with the shortest straight-line distance
         _, city = heapq.heappop(min_heap)
@@ -96,7 +99,42 @@ def greedyFirstSearch(node):
             if neighbor not in visited:
                 heapq.heappush(min_heap, (straight_line_distances[neighbor], neighbor))
                 came_from[neighbor] = city
-    print("Visited:", visited)  # For debugging purposes
+    print("Visited:", visited)
 
 
-greedyFirstSearch("Almeria")
+def aStar(node):
+    min_heap = []
+    visited = set()
+    came_from = {}  # Stores previous node (of the best path) for each node
+    g_score = {city: float("inf") for city in graph}  # store the lowest known cost to reach each node.
+    # TODO: But how do we know path with that cost?
+
+    # Push first node (start)
+    heapq.heappush(min_heap, (straight_line_distances[node], node, 0))  # (f, city, g)
+
+    # Process heap
+    while min_heap:
+        print("Heap:", min_heap)
+
+        # Get the city with the shortest straight-line distance
+        _, city = heapq.heappop(min_heap)
+
+        if city in visited:
+            continue
+
+        if city == "Valladolid":
+            print(f"Goal reached: {city}")
+            return
+
+        # Add it to the list of visited cities
+        visited.add(city)
+        print(f"Visiting: {city}")
+
+        for neighbor, _ in graph[city]:
+            if neighbor not in visited:
+                heapq.heappush(min_heap, (straight_line_distances[neighbor], neighbor, x))
+                came_from[neighbor] = city
+    print("Visited:", visited)
+
+
+greedyFirstSearch("Malaga")
