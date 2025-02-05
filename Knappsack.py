@@ -64,7 +64,7 @@ def DFS(target_ratio=None):
         # Skip item
         stack.append((item_idx + 1, value, weight, solution))
 
-    # Return best solution if no threshold solution was found
+    # Return the best solution if no target ratio is set
     print(f"Optimal value: {best_value}, Solution: {best_solution}")
     return best_solution, best_value
 
@@ -119,9 +119,3 @@ BFS()
 
 # DFS is uses less memory than BFS
 # BFS is usually faster(?)
-
-# start_time
-# tracemalloc.start
-
-# TODO: should I use tracemalloc and time to compare the memory and time usage?
-# TODO: Should i also return/print the total Path cost?
