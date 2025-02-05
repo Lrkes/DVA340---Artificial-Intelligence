@@ -137,11 +137,6 @@ def aStar(node, goal="Valladolid"):
     return None
 
 
-"""
-Reconstructs the path from the start node to the goal node
-"""
-
-
 def reconstruct_path(came_from, current):
     path = []
     while current in came_from:
@@ -155,7 +150,6 @@ def reconstruct_path(came_from, current):
 print(greedyFirstSearch("Malaga"))
 print("=====================================")
 print(aStar("Malaga"))
-
 
 """
 Greedy Best-First Search:
