@@ -34,7 +34,7 @@ items = [
 
 
 def DFS(target_ratio=None):
-    stack = [(0, 0, 0, [])]  # (item_idx, value, weight, solution)
+    stack = [(0, 0, 0, [])]  # (item_idx, value, weight, solution) LIFO
     # If target_ratio is set, return the first valid solution ("good enough")
     threshold_weight = target_ratio * max_weight if target_ratio is not None else max_weight
 
@@ -78,13 +78,13 @@ def BFS(target_ratio=None):
         item_idx, value, weight, solution = queue.popleft()
 
         # Stop early if target ratio is met (good enough solution)
-        if weight >= threshold_weight:
+        if target_ratio is not None and weight >= threshold_weight:
             print(f"First good enough value found: {value}, Solution: {solution}")
             return solution, value
 
         # Track the best if no target ratio is set
         if target_ratio is None and value > best_value and weight <= max_weight:
-            best_solution, best_value = solution, value
+            best_solution, best_value = solution[:], value
 
         # Base case: all items processed
         if item_idx == len(items):
@@ -119,3 +119,9 @@ BFS()
 
 # DFS is uses less memory than BFS
 # BFS is usually faster(?)
+
+# start_time
+# tracemalloc.start
+
+# TODO: should I use tracemalloc and time to compare the memory and time usage?
+# TODO: Should i also return/print the total Path cost?

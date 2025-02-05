@@ -28,7 +28,7 @@ graph = {
     "Huesca": [("Zaragoza", 74), ("Lleida", 112), ("Pamplona", 165)],
     "Pamplona": [("Huesca", 165), ("Zaragoza", 178)],
     "Soria": [("Zaragoza", 159), ("Guadalajara", 171), ("Logrono", 101), ("Burgos", 142)],
-    "Guadalajara": [("Zaragoza", 256), ("Soria", 171), ("Madrid", 60)],  # ✅ Now included
+    "Guadalajara": [("Zaragoza", 256), ("Soria", 171), ("Madrid", 60)],
     "Logrono": [("Soria", 101), ("Vitoria", 94)],
     "Vitoria": [("Logrono", 94), ("Burgos", 118), ("SanSebastian", 100), ("Bilbao", 62)],
     "SanSebastian": [("Vitoria", 100), ("Bilbao", 101)],
@@ -73,7 +73,7 @@ def greedyFirstSearch(node):
         It selects the next city based only on the heuristic (straight-line distance to the goal).
     """
     min_heap = []
-    visited = set()
+    visited = set()  # closed-list
     came_from = {}
 
     # Push first node (start)
