@@ -147,8 +147,10 @@ def reconstruct_path(came_from, current):
     return path
 
 
+print("Greedy Best First Search:")
 print(greedyFirstSearch("Malaga"))
 print("=====================================")
+print("A* Search:")
 print(aStar("Malaga"))
 
 """
