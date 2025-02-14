@@ -25,11 +25,43 @@ print("First Sudoku Grid:")
 for row in sudoku_puzzles[0]:
     print(row)
 
+def find_empty(board):
+    """Find the first empty cell in the Sudoku board."""
+    for i in range(9):
+        for j in range(9):
+            if board[i][j] == 0:
+                return i, j
+    return None, None
 
 def is_valid(board, row, col, num):
+    """Check if 'num' can be placed at board[row][col] without violating Sudoku rules."""
+
+    # Check row
     if num in board[row]:
         return False
-    if num in[board[i][col] for i in range(9)]:
-        return False
+
+    # TODO: add to notes^^
+    # # Check column (less memory efficient - creates list)
+    # if num in[board[i][col] for i in range(9)]:
+    #     return False
+
+    # Check column
+    for i in range(9):
+        if board[i][col] == num:
+            return False
+
     # Check 3x3 grid
-    # check if // 3 for starting point
+    start_row, start_col = (row // 3) * 3, (col // 3) * 3
+    for i in range(3):
+        for j in range(3):
+            if board[start_row + i][start_col + j] == num:
+                return False
+    return True
+
+def solve_sudoku(board):
+    """Solve the Sudoku puzzle using backtracking."""
+    row, col = find_empty(board)
+
+    if row is None:
+        return True
+
