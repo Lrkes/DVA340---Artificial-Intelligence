@@ -1,3 +1,6 @@
+import time
+
+
 def parse_sudoku_from_text(file_path):
     """Extracts Sudoku puzzles from .txt -> list."""
     sudokus = []
@@ -7,7 +10,6 @@ def parse_sudoku_from_text(file_path):
         for line in file:
             line = line.strip()
             if line.startswith("SUDOKU") or line == "EOF" or line == "":
-                # Ignore metadata
                 continue
             if len(line) == 9 and line.isdigit():
                 current_grid.append([int(num) for num in line])
@@ -16,14 +18,6 @@ def parse_sudoku_from_text(file_path):
                     current_grid = []
 
     return sudokus
-
-
-# file_path = "sudoku.txt"
-# sudoku_puzzles = parse_sudoku_from_text(file_path)
-
-# print("First Sudoku Grid:")
-# for row in sudoku_puzzles[0]:
-#     print(row)
 
 
 def find_empty(board):
@@ -36,16 +30,11 @@ def find_empty(board):
 
 
 def is_valid(board, row, col, num):
-    """Check if 'num' can be placed at board[row][col] without violating Sudoku rules."""
+    """Check if 'num' can be placed at position without violating Sudoku rules."""
 
     # Check row
     if num in board[row]:
         return False
-
-    # TODO: add to notes^^
-    # # Check column (less memory efficient - creates list)
-    # if num in[board[i][col] for i in range(9)]:
-    #     return False
 
     # Check column
     for i in range(9):
@@ -81,7 +70,7 @@ def solve_sudoku(board):
 
 
 def print_board(board):
-    """Print Sudoku board in a readable format."""
+    """Pretty Sudoku Board."""
     for i in range(9):
         if i % 3 == 0 and i != 0:
             print("- - - - - - - - - - -")
@@ -95,12 +84,26 @@ def print_board(board):
 file_path = "sudoku.txt"
 sudoku_puzzles = parse_sudoku_from_text(file_path)
 
+total_time = 0
+
 for idx, puzzle in enumerate(sudoku_puzzles):
-    print(f"\n🔹 Sudoku {idx + 1} Before Solving:")
+    print(f"\nSudoku {idx + 1} Starting Position:")
     print_board(puzzle)
 
+    start_time = time.time()
+
     if solve_sudoku(puzzle):
-        print(f"\n✅ Sudoku {idx + 1} Solved:")
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+
+        print(f"\n🏆 Sudoku {idx + 1} Solved in {elapsed_time:.4f} seconds:")
         print_board(puzzle)
     else:
-        print(f"\n❌ Sudoku {idx + 1} has no solution!")
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        print(f"\n✖ Sudoku {idx + 1} has no solution!")
+
+    total_time += elapsed_time
+
+    print(f"\nTotal Time Taken: {total_time:.4f} seconds for {len(sudoku_puzzles)} puzzles.")
+
