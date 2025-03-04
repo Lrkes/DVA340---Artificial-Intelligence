@@ -4,10 +4,10 @@ from scipy.spatial.distance import euclidean
 
 # --- PARAMETERS ---
 FILE_PATH = "./Assignment 3 berlin52.tsp"
-POPULATION_SIZE = 100  # Number of initial routes
+POPULATION_SIZE = 400  # Number of initial routes
 N_CITIES = 52  # Total number of cities in Berlin52
-TOURNAMENT_SIZE = 5  # How many routes to compare in selection
-
+TOURNAMENT_SIZE = 3  # How many routes to compare in selection
+MUTATION_RATE = 0.2  # Probability of mutation
 
 def load_tsp_file(file_path):
     """Reads and parses the TSP file to extract city coordinates."""
@@ -27,17 +27,15 @@ def load_tsp_file(file_path):
 
 
 def compute_distance_matrix(df):
-    """Computes the Euclidean distance matrix for all city pairs."""
+    """Computes Euclidean distance for all city pairs."""
     locations = df[['X', 'Y']].values
     size = len(locations)
     return {(i, j): euclidean(locations[i], locations[j]) for i in range(size) for j in range(size)}
 
 
 def generate_random_route(size):
-    """Generates a random valid TSP route starting and ending at city 1 (index 0)."""
-    route = list(range(1, size))  # Exclude city 1 from shuffle
-    random.shuffle(route)
-    return [0] + route + [0]  # Ensure start & end at city 1
+    """Generates random routes starting from and ending at [0]."""
+    return [0] + random.sample(range(1, size), size - 1) + [0]
 
 
 def route_distance(route, distance_matrix):
@@ -59,7 +57,6 @@ def tournament_selection(population, fitnesses, k=TOURNAMENT_SIZE): # TODO: Look
 def ordered_crossover(parent1, parent2):
     """Performs Ordered Crossover (OX1) on two parent routes."""
     start, end = sorted(random.sample(range(1, len(parent1) - 1), 2))
-    print(f"Selected segment: {start} to {end}")  # Debugging
 
     child1 = [None] * len(parent1)
     child2 = [None] * len(parent2)
@@ -89,11 +86,17 @@ def ordered_crossover(parent1, parent2):
     return child1, child2
 
 
-def mutate(route, mutation_rate=0.1):
-    """Mutates a TSP route by swapping two cities with a given probability."""
-    if random.random() < mutation_rate:
-        city1, city2 = random.sample(range(1, len(route) - 1), 2)
-        route[city1], route[city2] = route[city2], route[city1]
+def mutate(route):
+    """Mutates a TSP route by swapping two pairs of cities or reversing a segment."""
+    if random.random() < MUTATION_RATE:
+        if random.random() < 0.5:  # 50% chance to swap two pairs
+            city1, city2 = random.sample(range(1, len(route) - 1), 2)
+            route[city1], route[city2] = route[city2], route[city1]
+            city3, city4 = random.sample(range(1, len(route) - 1), 2)
+            route[city3], route[city4] = route[city4], route[city3]
+        else:  # 50% chance to reverse a segment
+            start, end = sorted(random.sample(range(1, len(route) - 1), 2))
+            route[start:end] = reversed(route[start:end])
     return route
 
 
@@ -106,9 +109,71 @@ def genetic_algorithm(max_fitness_calculations=250000):
     # Step 2: Compute Initial Fitness Scores
     fitness_scores = [route_distance(route, distance_matrix) for route in population]
 
+    # Step 3: Track Fitness Calculations & Best Route
+    fitness_calculations = len(population)  # We already evaluated all initial routes
+    best_route = None
+    best_distance = float("inf")
+
+    # Step 4: Start Evolution Loop
+    while fitness_calculations < max_fitness_calculations:
+        # Selection Step
+        num_selected = POPULATION_SIZE // 2  # Select top 50%
+        selected_population = [tournament_selection(population, fitness_scores) for _ in range(num_selected)]
+
+        # Crossover Step: Generate Offspring
+        new_population = []
+        for i in range(0, num_selected, 2):
+            if i + 1 < num_selected:
+                if random.random() < 0.9:  # 90% chance of crossover
+                    child1, child2 = ordered_crossover(selected_population[i], selected_population[i + 1])
+                    new_population.extend([child1, child2])
+                else:
+                    new_population.extend(
+                        [selected_population[i], selected_population[i + 1]])  # Keep parents unchanged
+
+        # Mutation Step
+        new_population = [mutate(route) for route in new_population]
+
+        # Evaluate Fitness of New Population
+        new_fitness_scores = [route_distance(route, distance_matrix) for route in new_population]
+        fitness_calculations += len(new_population)  # Update fitness count
+
+        # Keep the Best Solution Found
+        min_distance = min(new_fitness_scores)
+        if min_distance < best_distance:
+            best_distance = min_distance
+            best_route = new_population[new_fitness_scores.index(min_distance)]
+
+        if fitness_calculations % 5000 < len(new_population):
+            print(f"Fitness Calc: {fitness_calculations} | Best Distance: {best_distance}")
+
+        # Stop if We Find a Solution <9000
+        # if best_distance < 9000:
+        #     break
+
+        # Keep the best 50% of parents, replace the rest
+        num_elite = POPULATION_SIZE // 2
+        elite_population = sorted(zip(population, fitness_scores), key=lambda x: x[1])[:num_elite]  # Top 50%
+        elite_population = [x[0] for x in elite_population]  # Extract just the routes
+
+        # Replace only the weaker half of the population
+        population = elite_population + new_population[:num_elite]
+        fitness_scores = [route_distance(route, distance_matrix) for route in population]
+
+    return best_route, best_distance
+
 
 berlin52_df = load_tsp_file(FILE_PATH)
 distance_matrix = compute_distance_matrix(berlin52_df)
+
+
+# Run the genetic algorithm and get the best route
+best_route, best_distance = genetic_algorithm()
+
+# Print the best route and its total distance
+print("\n--- Best Route Found ---")
+print("Route:", best_route)
+print("Total Distance:", best_distance)
 
 # ----------------------------------------------------------
 # 🚀 Key Insights About Crossover in Genetic Algorithms (TSP)
