@@ -3,12 +3,12 @@ import pandas as pd
 from scipy.spatial.distance import euclidean
 
 N_CITIES = 52
-N_ANTS = 50  # Number of ants per iteration
+N_ANTS = 50  # Number of ants per iteration -> Number of paths per iteration
 MAX_ITERATIONS = 100  # Number of iterations
 EVAPORATION_RATE = 0.1  # Pheromone evaporation rate
-ALPHA = 1  # Influence of pheromone
-BETA = 2  # Influence of heuristic (1/distance)
-Q = 100  # Pheromone deposit factor
+ALPHA = 1  # Influence of pheromone: higher values give more importance to pheromones
+BETA = 2  # Influence of heuristic (1/distance): higher values give more importance to distance
+Q = 100  # Pheromone deposit factor - How much pheromone an ant deposits on its path
 
 
 def load_tsp_file(file_path):
@@ -52,15 +52,17 @@ def construct_ant_route(pheromone, distance_matrix, alpha=ALPHA, beta=BETA):
     available_cities = set(range(1, N_CITIES))
 
     while available_cities:
-        current_city = route[-1]
+        current_city = route[-1]  # Last city in route
         probabilities = []
         for city in available_cities:
             pheromone_level = pheromone[(current_city, city)] ** alpha
             heuristic = (1 / distance_matrix[(current_city, city)]) ** beta
-            probabilities.append(pheromone_level * heuristic)
+            probabilities.append(pheromone_level * heuristic)  # Calculate probability for each available city
 
-        probabilities = [p / sum(probabilities) for p in probabilities]  # Normalize
-        next_city = random.choices(list(available_cities), probabilities)[0]
+        probabilities = [p / sum(probabilities) for p in probabilities]  # Normalize: Scores to probabilities
+        next_city = random.choices(list(available_cities), probabilities)[0]  # Choose next city based on probabilities
+
+        # Update route and available cities
         route.append(next_city)
         available_cities.remove(next_city)
 
@@ -68,8 +70,11 @@ def construct_ant_route(pheromone, distance_matrix, alpha=ALPHA, beta=BETA):
     return route
 
 
-def update_pheromones(pheromone, ant_routes, distance_matrix, evaporation_rate=EVAPORATION_RATE, Q=Q):
+def update_pheromones(pheromone, ant_routes, distance_matrix, evaporation_rate=EVAPORATION_RATE):
     """Updates pheromone levels based on ant routes and fitness."""
+
+    # Balances Evaporation (Forgetting Bad Paths) and Deposition (Reinforces Good Paths)
+
     # Evaporate pheromones
     for key in pheromone:
         pheromone[key] *= (1 - evaporation_rate)
@@ -77,7 +82,7 @@ def update_pheromones(pheromone, ant_routes, distance_matrix, evaporation_rate=E
     # Deposit new pheromones based on ant performance
     for route in ant_routes:
         distance = route_distance(route, distance_matrix)
-        contribution = Q / distance
+        contribution = Q / distance  # Contribution = DepositFactor / TotalDistance: More contribution for shorter paths
         for i in range(len(route) - 1):
             pheromone[(route[i], route[i+1])] += contribution
             pheromone[(route[i+1], route[i])] += contribution  # both ways
@@ -87,7 +92,7 @@ def ant_colony_optimization(max_iterations=MAX_ITERATIONS):
     """Runs the ACO algorithm to find an optimal TSP route."""
     pheromone = initialize_pheromone_matrix()
     best_route = None
-    best_distance = float("inf")
+    best_distance = float("inf")  # infinite
 
     for iteration in range(max_iterations):
         # Generate routes for all ants
@@ -115,6 +120,6 @@ distance_matrix = compute_distance_matrix(berlin52_df)
 
 best_route, best_distance = ant_colony_optimization()
 
-print("\n--- Best Route Found ---")
+print("\n--- Best Route Found   ---")
 print("Route:", best_route)
 print("Total Distance:", best_distance)

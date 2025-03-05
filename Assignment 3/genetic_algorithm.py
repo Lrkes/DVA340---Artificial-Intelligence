@@ -9,6 +9,7 @@ N_CITIES = 52  # Total number of cities in Berlin52
 TOURNAMENT_SIZE = 3  # How many routes to compare in selection
 MUTATION_RATE = 0.2  # Probability of mutation
 
+
 def load_tsp_file(file_path):
     """Reads and parses the TSP file to extract city coordinates."""
     locations = []
