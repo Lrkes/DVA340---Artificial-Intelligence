@@ -1,6 +1,7 @@
 import pandas as pd
 import random
 from scipy.spatial.distance import euclidean
+import matplotlib.pyplot as plt
 
 # --- PARAMETERS ---
 FILE_PATH = "./Assignment 3 berlin52.tsp"
@@ -114,6 +115,7 @@ def genetic_algorithm(max_fitness_calculations=250000):
     fitness_calculations = len(population)  # We already evaluated all initial routes
     best_route = None
     best_distance = float("inf")
+    performance = []
 
     # Step 4: Start Evolution Loop
     while fitness_calculations < max_fitness_calculations:
@@ -145,7 +147,9 @@ def genetic_algorithm(max_fitness_calculations=250000):
             best_distance = min_distance
             best_route = new_population[new_fitness_scores.index(min_distance)]
 
+
         if fitness_calculations % 5000 < len(new_population):
+            performance.append(best_distance)
             print(f"Fitness Calc: {fitness_calculations} | Best Distance: {best_distance}")
 
         # Stop if We Find a Solution <9000
@@ -161,40 +165,27 @@ def genetic_algorithm(max_fitness_calculations=250000):
         population = elite_population + new_population[:num_elite]
         fitness_scores = [route_distance(route, distance_matrix) for route in population]
 
-    return best_route, best_distance
+    return best_route, best_distance, performance
 
 
 berlin52_df = load_tsp_file(FILE_PATH)
 distance_matrix = compute_distance_matrix(berlin52_df)
 
-
-# Run the genetic algorithm and get the best route
-best_route, best_distance = genetic_algorithm()
+# Run the Genetic Algorithm
+best_route, best_distance, ga_performance = genetic_algorithm()
 
 # Print the best route and its total distance
 print("\n--- Best Route Found ---")
 print("Route:", best_route)
 print("Total Distance:", best_distance)
 
-# ----------------------------------------------------------
-# 🚀 Key Insights About Crossover in Genetic Algorithms (TSP)
-# ✅ 1. Crossover Mixes Good Traits
-#
-# We select two good parents from the population.
-# We assume their city sequences contain good patterns.
-# By mixing parts of both, we hope to create a better offspring.
-# ✅ 2. Crossover is Random—It Can Go Wrong
-#
-# Sometimes, we accidentally combine bad parts instead of good ones.
-# In the early generations, many offspring won't be better than their parents.
-# That’s okay! Not every child needs to be better—just a few!
-# ✅ 3. Why Crossover Works in the Long Run
-#
-# Many crossovers happen, so some lucky children inherit great routes.
-# Selection ensures only the best offspring survive.
-# Mutation adds diversity, preventing the algorithm from getting stuck in bad solutions.
-# ✅ 4. The Balance Between Exploration & Exploitation
-#
-# Exploitation = Keeping and refining the best solutions.
-# Exploration = Allowing new possibilities (mutation helps here).
-# A good GA balances both to find an optimal route over generations.
+plt.plot([i * 5000 for i in range(len(ga_performance))], ga_performance, label="Genetic Algorithm")
+plt.axhline(y=9000, color='red', linestyle='dashed', label="Threshold: 9000")
+plt.xlabel("Fitness Calculations")
+plt.ylabel("Shortest Distance")
+plt.title("Genetic Algorithm Performance")
+plt.text(0, max(ga_performance) * 0.95, "Updates every 5000 calculations", fontsize=10, color='gray')
+plt.legend()
+plt.savefig('plots/ga_performance.png')
+plt.show()
+

@@ -1,6 +1,8 @@
 import random
 import pandas as pd
 from scipy.spatial.distance import euclidean
+import matplotlib.pyplot as plt
+
 
 N_CITIES = 52
 N_ANTS = 50  # Number of ants per iteration -> Number of paths per iteration
@@ -93,6 +95,7 @@ def ant_colony_optimization(max_iterations=MAX_ITERATIONS):
     pheromone = initialize_pheromone_matrix()
     best_route = None
     best_distance = float("inf")  # infinite
+    performance = []
 
     for iteration in range(max_iterations):
         # Generate routes for all ants
@@ -109,17 +112,32 @@ def ant_colony_optimization(max_iterations=MAX_ITERATIONS):
         update_pheromones(pheromone, ant_routes, distance_matrix)
 
         # Print progress every 10 iterations
-        if iteration % 10 == 0:
+        if iteration % 5 == 0:
+            performance.append(best_distance)
             print(f"Iteration {iteration}: Best Distance = {best_distance}")
 
-    return best_route, best_distance
+    return best_route, best_distance, performance
 
 
 berlin52_df = load_tsp_file("./Assignment 3 berlin52.tsp")
 distance_matrix = compute_distance_matrix(berlin52_df)
 
-best_route, best_distance = ant_colony_optimization()
+best_route, best_distance, aco_performance = ant_colony_optimization()
 
 print("\n--- Best Route Found   ---")
 print("Route:", best_route)
 print("Total Distance:", best_distance)
+
+# Plot results
+plt.figure(figsize=(10, 5))
+plt.plot([i * 5 for i in range(len(aco_performance))], aco_performance, label="Ant Colony Optimization", color='green')
+plt.axhline(y=9000, color='red', linestyle='dashed', label="Threshold: 9000")
+plt.xlabel("Iterations")
+plt.ylabel("Shortest Distance")
+plt.title("Ant Colony Optimization Performance")
+
+plt.text(0, max(aco_performance) * 0.95, "Updates every 5 iterations", fontsize=10, color='gray')
+plt.legend()
+
+plt.savefig('plots/aco_performance.png')
+plt.show()
