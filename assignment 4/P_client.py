@@ -30,32 +30,50 @@ def decide_move(boardIn, playerTurnIn):
     return playerMove, "miniMaxMove"
 
 
-def minimax(board, playerTurnIn, depth, max_depth):
-    legal_moves = get_legal_moves(board, playerTurnIn)  # list of legal moves
+def minimax(board, playerTurnIn, depth, max_depth, alpha=float('-inf'), beta=float('inf')):
+    legal_moves = get_legal_moves(board, playerTurnIn)  # List of available moves
 
-    # Base case: if we reached max depth or there are no legal moves left
+    # Base case: If max depth is reached or no legal moves left
     if depth == max_depth or not legal_moves:
         return None, evaluate_board(board)
 
-    # For player 1 we want to maximize the score,
-    # for player 2 we want to minimize it
-    best_score = float('-inf') if playerTurnIn == 1 else float('inf')
-    best_move = None
+    # Maximizing player (Player 1) tries to maximize score
+    if playerTurnIn == 1:
+        best_score = float('-inf')
+        best_move = None
 
-    # For each legal move, simulate the move and evaluate recursively.
-    for move in legal_moves:
-        new_board, next_turn = simulate_move(board, playerTurnIn, move)
-        # Recursively call minimax for the new board and the next player's turn,
-        # incrementing the depth.
-        _, score = minimax(new_board, next_turn, depth + 1, max_depth)
+        for move in legal_moves:
+            new_board, next_turn = simulate_move(board, playerTurnIn, move)
+            _, score = minimax(new_board, next_turn, depth + 1, max_depth, alpha, beta)
 
-        # For Player 1, we update if the new score is higher (maximization).
-        # For Player 2, we update if the new score is lower (minimization).
-        if (playerTurnIn == 1 and score > best_score) or (playerTurnIn == 2 and score < best_score):
-            best_score = score
-            best_move = move
+            if score > best_score:
+                best_score = score
+                best_move = move
 
-    return best_move, best_score
+            alpha = max(alpha, score)  # Update alpha
+            if beta <= alpha:
+                break  # **Prune remaining branches**
+
+        return best_move, best_score
+
+    # Minimizing player (Player 2) tries to minimize score
+    else:
+        best_score = float('inf')
+        best_move = None
+
+        for move in legal_moves:
+            new_board, next_turn = simulate_move(board, playerTurnIn, move)
+            _, score = minimax(new_board, next_turn, depth + 1, max_depth, alpha, beta)
+
+            if score < best_score:
+                best_score = score
+                best_move = move
+
+            beta = min(beta, score)  # Update beta
+            if beta <= alpha:
+                break  # **Prune remaining branches**
+
+        return best_move, best_score
 
 
 def get_legal_moves(board, playerTurnIn):
