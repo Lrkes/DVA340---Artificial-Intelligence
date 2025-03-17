@@ -10,13 +10,16 @@ from multiprocessing.pool import ThreadPool
 import os
 from datetime import date
 
+# My current implementation of minimax maximizes the score for player 1 and minimizes it for player 2.
+# But since we can be player 1 or 2, we look to minimize the score for player 2 and maximize it for player 1.
+# So it works as intended but the implementation is a bit confusing.
 
 def decide_move(boardIn, playerTurnIn):
     #CHANGE THIS FILE TO CODE INTELLIGENCE IN YOUR CLIENT.
     # PLAYERMOVE IS '1'..'6'
     # BOARDIN CONSISTS OF 14 INTS. BOARDIN[0-5] ARE P1 HOLES, BOARDIN[6] IS P1 STORE
     # BOARDIN[7-12] ARE P2 HOLES, BOARDIN[13] IS P2 STORE
-    best_move, _ = minimax(boardIn, playerTurnIn, depth=0, max_depth=3)  # Adjust depth as needed
+    best_move, _ = minimax(boardIn, playerTurnIn, depth=0, max_depth=3)
 
     if best_move is None:
         print("No valid move found, defaulting to first available move.")
@@ -28,17 +31,26 @@ def decide_move(boardIn, playerTurnIn):
 
 
 def minimax(board, playerTurnIn, depth, max_depth):
-    legal_moves = get_legal_moves(board, playerTurnIn)
+    legal_moves = get_legal_moves(board, playerTurnIn)  # list of legal moves
+
+    # Base case: if we reached max depth or there are no legal moves left
     if depth == max_depth or not legal_moves:
         return None, evaluate_board(board)
 
+    # For player 1 we want to maximize the score,
+    # for player 2 we want to minimize it
     best_score = float('-inf') if playerTurnIn == 1 else float('inf')
     best_move = None
 
+    # For each legal move, simulate the move and evaluate recursively.
     for move in legal_moves:
         new_board, next_turn = simulate_move(board, playerTurnIn, move)
+        # Recursively call minimax for the new board and the next player's turn,
+        # incrementing the depth.
         _, score = minimax(new_board, next_turn, depth + 1, max_depth)
 
+        # For Player 1, we update if the new score is higher (maximization).
+        # For Player 2, we update if the new score is lower (minimization).
         if (playerTurnIn == 1 and score > best_score) or (playerTurnIn == 2 and score < best_score):
             best_score = score
             best_move = move
@@ -47,7 +59,6 @@ def minimax(board, playerTurnIn, depth, max_depth):
 
 
 def get_legal_moves(board, playerTurnIn):
-    moves = []
     if playerTurnIn == 1:
         return [i + 1 for i in range(6) if board[i] > 0]  # P1 side moves
     else:
@@ -55,8 +66,11 @@ def get_legal_moves(board, playerTurnIn):
 
 
 def evaluate_board(board):
-    """Evaluates the board: positive = better for P1, negative = better for P2."""
-    return board[6] - board[13]
+    """Evaluates the board state from a fixed perspective.
+
+    Returns a positive score if Player 1 is ahead and a negative score if Player 2 is ahead.
+    """
+    return board[6] - board[13]  # P1 store minus P2 store
 
 
 def simulate_move(board, playerTurn, playerMove):
@@ -64,7 +78,7 @@ def simulate_move(board, playerTurn, playerMove):
     Calls `play()` on a board copy and returns the new board + next turn.
     """
     new_board = copy.deepcopy(board)  # Creates a copy of the board
-
+    # TODO: Concept of utility function report, improvements
     result = play(playerTurn, playerMove, new_board)  # Simulate move using play()
 
     if result is None:
