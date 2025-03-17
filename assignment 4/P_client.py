@@ -69,9 +69,9 @@ def minimax(board, playerTurnIn, depth, max_depth, alpha=float('-inf'), beta=flo
                 best_score = score
                 best_move = move
 
-            beta = min(beta, score)  # Update beta
+            beta = min(beta, score)
             if beta <= alpha:
-                break  # **Prune remaining branches**
+                break
 
         return best_move, best_score
 
