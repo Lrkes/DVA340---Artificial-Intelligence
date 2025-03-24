@@ -4,6 +4,13 @@ import pandas as pd
 from torch.utils.data import DataLoader, TensorDataset
 from sklearn.model_selection import train_test_split
 
+# Configurable Parameters
+hidden_size = 256      # Hidden layer size
+batch_size = 32        # Batch size for DataLoader
+num_epochs = 12        # Number of training epochs
+learning_rate = 5e-4   # Learning rate for optimizer
+dropout_rate = 0.5     # Dropout rate
+
 # 1. Device Configuration
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # print(f"Using {device} device")
@@ -26,33 +33,30 @@ def load_data(filepath):
 # Load dataset
 X_train, X_val, X_test, y_train, y_val, y_test = load_data("Assignment5.csv")
 
-
 # print(f"Training data: {X_train.shape}, {y_train.shape}")
 # print(f"Validation data: {X_val.shape}, {y_val.shape}")
 # print(f"Testing data: {X_test.shape}, {y_test.shape}")
 
 # 3. Convert Data to PyTorch Tensors and DataLoaders
-def create_dataloader(X, y, batch_size=32, shuffle=True):
+def create_dataloader(X, y, batch_size=batch_size, shuffle=True):
     """Creates a PyTorch DataLoader from NumPy arrays."""
     tensor_x = torch.tensor(X, dtype=torch.float32)
     tensor_y = torch.tensor(y, dtype=torch.long)
     dataset = TensorDataset(tensor_x, tensor_y)
     return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
 
-
-batch_size = 32
 train_loader = create_dataloader(X_train, y_train, batch_size)
 val_loader = create_dataloader(X_val, y_val, batch_size, shuffle=False)
 test_loader = create_dataloader(X_test, y_test, batch_size, shuffle=False)
 
 # 4. Define the ANN Model
 class ANN(nn.Module):
-    def __init__(self, hidden_size=128):
+    def __init__(self, hidden_size=hidden_size):
         super(ANN, self).__init__()
         self.fc1 = nn.Linear(784, hidden_size)  # Input (28x28 images) -> Hidden Layer 1
         self.fc2 = nn.Linear(hidden_size, hidden_size)  # Hidden Layer 1 -> Hidden Layer 2
         self.fc3 = nn.Linear(hidden_size, 10)  # Output layer (0-9 digits)
-        self.dropout = nn.Dropout(0.5)  # 50%: to prevent overfitting/over reliance (neurons randomly turned off)
+        self.dropout = nn.Dropout(dropout_rate)  # Use configurable dropout rate
 
     def forward(self, x):
         # Relu activation for hidden layers
@@ -62,19 +66,15 @@ class ANN(nn.Module):
         x = self.fc3(x)  # CrossEntropyLoss applies softmax automatically
         return x
 
-
 # Initialize model
-model = ANN(256).to(device)
-# print(model)
+model = ANN(hidden_size).to(device)
 
-
-def train_model(model, train_loader, val_loader, num_epochs=10, learning_rate=1e-4):
+def train_model(model, train_loader, val_loader, num_epochs=num_epochs, learning_rate=learning_rate):
     """Trains a model using the given data loaders and prints validation accuracy each epoch."""
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)  # adjust learning rate dynamically
 
     for epoch in range(num_epochs):
-        # Training
         model.train()
         total_loss = 0
 
@@ -83,15 +83,9 @@ def train_model(model, train_loader, val_loader, num_epochs=10, learning_rate=1e
 
             outputs = model(images)  # Train the model: forward pass
             loss = criterion(outputs, labels)  # Calculate error (CrossEntropyLoss): based on predicted vs actual
-            # softmax used to calculate probabilities of each class (0-9)
-            optimizer.zero_grad()  # Zero out gradients from previous iteration (after each batch)
+            optimizer.zero_grad()  # Zero out gradients from previous iteration
             loss.backward()  # Backpropagation: compute gradients
             optimizer.step()  # Update weights
-
-            # Adam updates weights using gradients, but unlike standard SGD with a fixed learning rate,
-            # it dynamically adjusts each parameter's learning rate by tracking:
-            # 1. The running average (mean) of past gradients, which indicates the overall direction.
-            # 2. The running average of squared gradients (variance), which reflects how noisy or unstable the gradients are.
 
             total_loss += loss.item()
 
@@ -102,7 +96,6 @@ def train_model(model, train_loader, val_loader, num_epochs=10, learning_rate=1e
         correct = 0
         total = 0
 
-        # Don't need gradients for eval
         with torch.no_grad():
             for images, labels in val_loader:
                 images, labels = images.to(device), labels.to(device)
@@ -119,7 +112,6 @@ def train_model(model, train_loader, val_loader, num_epochs=10, learning_rate=1e
 
     # Save your trained model weights
     torch.save(model.state_dict(), "trained_ann.pth")
-
 
 def eval_model(model, test_loader):
     """Evaluates the model on the test set."""
@@ -153,6 +145,5 @@ def eval_model(model, test_loader):
         acc = 100 * correct_per_class[i] / total_per_class[i] if total_per_class[i] > 0 else 0.0
         print(f"Accuracy for class {i}: {acc:.2f}%")
 
-
-train_model(model, train_loader, val_loader, num_epochs=12, learning_rate=5e-4)
+train_model(model, train_loader, val_loader, num_epochs=num_epochs, learning_rate=learning_rate)
 eval_model(model, test_loader)
