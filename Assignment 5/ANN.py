@@ -4,7 +4,8 @@ import pandas as pd
 from torch.utils.data import DataLoader, TensorDataset
 from sklearn.model_selection import train_test_split
 import matplotlib
-matplotlib.use('Agg')
+
+matplotlib.use('Agg')  # ran into error when using plt.show()
 import matplotlib.pyplot as plt
 
 # Configurable Parameters
@@ -17,8 +18,6 @@ dropout_rate = 0.5  # Dropout rate
 # 1. Device Configuration
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-
-# print(f"Using {device} device")
 
 # 2. Load and Preprocess Data
 def load_data(filepath):
