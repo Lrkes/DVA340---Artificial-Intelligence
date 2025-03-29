@@ -3,16 +3,21 @@ from torch import nn
 import pandas as pd
 from torch.utils.data import DataLoader, TensorDataset
 from sklearn.model_selection import train_test_split
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 
 # Configurable Parameters
-hidden_size = 256      # Hidden layer size
-batch_size = 32        # Batch size for DataLoader
-num_epochs = 12        # Number of training epochs
-learning_rate = 5e-4   # Learning rate for optimizer
-dropout_rate = 0.5     # Dropout rate
+hidden_size = 256  # Hidden layer size
+batch_size = 32  # Batch size for DataLoader
+num_epochs = 12  # Number of training epochs
+learning_rate = 5e-4  # Learning rate for optimizer
+dropout_rate = 0.5  # Dropout rate
 
 # 1. Device Configuration
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
 # print(f"Using {device} device")
 
 # 2. Load and Preprocess Data
@@ -26,12 +31,14 @@ def load_data(filepath):
 
     # Split into train (70%), validation (10%), and test (20%)
     X_train, X_temp, y_train, y_temp = train_test_split(X, y, test_size=0.30, random_state=42)
-    X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=2/3, random_state=42)
+    X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=2 / 3, random_state=42)
 
     return X_train, X_val, X_test, y_train, y_val, y_test
 
+
 # Load dataset
 X_train, X_val, X_test, y_train, y_val, y_test = load_data("Assignment5.csv")
+
 
 # print(f"Training data: {X_train.shape}, {y_train.shape}")
 # print(f"Validation data: {X_val.shape}, {y_val.shape}")
@@ -45,9 +52,11 @@ def create_dataloader(X, y, batch_size=batch_size, shuffle=True):
     dataset = TensorDataset(tensor_x, tensor_y)
     return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
 
+
 train_loader = create_dataloader(X_train, y_train, batch_size)
 val_loader = create_dataloader(X_val, y_val, batch_size, shuffle=False)
 test_loader = create_dataloader(X_test, y_test, batch_size, shuffle=False)
+
 
 # 4. Define the ANN Model
 class ANN(nn.Module):
@@ -66,13 +75,17 @@ class ANN(nn.Module):
         x = self.fc3(x)  # CrossEntropyLoss applies softmax automatically
         return x
 
+
 # Initialize model
 model = ANN(hidden_size).to(device)
+
 
 def train_model(model, train_loader, val_loader, num_epochs=num_epochs, learning_rate=learning_rate):
     """Trains a model using the given data loaders and prints validation accuracy each epoch."""
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)  # adjust learning rate dynamically
+
+    val_accuracy_list = []  # For validation accuracy tracking
 
     for epoch in range(num_epochs):
         model.train()
@@ -105,6 +118,7 @@ def train_model(model, train_loader, val_loader, num_epochs=num_epochs, learning
                 correct += (predicted == labels).sum().item()
 
         val_accuracy = 100 * correct / total
+        val_accuracy_list.append(val_accuracy)
 
         print(f"Epoch [{epoch + 1}/{num_epochs}], "
               f"Train Loss: {avg_train_loss:.4f}, "
@@ -112,6 +126,8 @@ def train_model(model, train_loader, val_loader, num_epochs=num_epochs, learning
 
     # Save your trained model weights
     torch.save(model.state_dict(), "trained_ann.pth")
+    return val_accuracy_list
+
 
 def eval_model(model, test_loader):
     """Evaluates the model on the test set."""
@@ -145,5 +161,16 @@ def eval_model(model, test_loader):
         acc = 100 * correct_per_class[i] / total_per_class[i] if total_per_class[i] > 0 else 0.0
         print(f"Accuracy for class {i}: {acc:.2f}%")
 
-train_model(model, train_loader, val_loader, num_epochs=num_epochs, learning_rate=learning_rate)
+
+val_acc_history = train_model(model, train_loader, val_loader,
+                              num_epochs=num_epochs,
+                              learning_rate=learning_rate)
+
 eval_model(model, test_loader)
+
+epochs = range(1, len(val_acc_history) + 1)
+plt.plot(epochs, val_acc_history, marker='o')
+plt.title(f'Validation Accuracy Over Epochs (Final: {val_acc_history[-1]:.2f}%)')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy (%)')
+plt.savefig("val_accuracy_plot.png", dpi=300)
